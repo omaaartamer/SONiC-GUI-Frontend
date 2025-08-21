@@ -5,17 +5,19 @@ export default function OperationalStatus() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
 
-  const useMockData = false; // set to false to use backend
+  const useMockData = false; // set true for testing without backend
 
   useEffect(() => {
     const fetchStatus = async () => {
       if (useMockData) {
+        // Mock data with simple UP/DOWN
         const mock = {
           eth0: "UP",
           eth1: "DOWN",
           eth2: "UP",
           eth3: "DOWN",
         };
+        // Convert object into array for table rendering
         const mockList = Object.entries(mock).map(([ifname, oper_status]) => ({
           ifname,
           oper_status:
@@ -30,6 +32,7 @@ export default function OperationalStatus() {
           "http://localhost:8000/portOp/status-summary",
         );
         const data = await response.json();
+        // Transform backend response into array with normalized statuses
         const formatted = data.ports.map((port) => ({
           ifname: port.ifname,
           oper_status:
@@ -45,6 +48,7 @@ export default function OperationalStatus() {
     fetchStatus();
   }, []);
 
+  // Apply search + dropdown filter
   const filteredStatus = status.filter(({ ifname, oper_status }) => {
     const matchesSearch = ifname.toLowerCase().includes(search.toLowerCase());
     const matchesFilter = filter === "all" || oper_status === filter;
@@ -58,7 +62,7 @@ export default function OperationalStatus() {
         <input
           type="text"
           placeholder="Search by interface name"
-          className="border border-gray-300 px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-300 text-gray-200"
+          className="w-72 border border-gray-300 px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-300 text-gray-200"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -68,8 +72,8 @@ export default function OperationalStatus() {
           onChange={(e) => setFilter(e.target.value)}
         >
           <option value="all">All</option>
-          <option value="UP">UP</option>
-          <option value="DOWN">DOWN</option>
+          <option value="up">Up</option>
+          <option value="down">Down</option>
         </select>
       </div>
 
