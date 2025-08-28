@@ -8,6 +8,7 @@ export default function AdminStatus() {
 
   const useMockData = false;
 
+  // Normalize admin status values coming from backend or mock data
   const mapAdminStatus = (status) => {
     if (!status) return "";
     return status.toLowerCase() === "up"
@@ -20,6 +21,7 @@ export default function AdminStatus() {
   useEffect(() => {
     const fetchInterfaces = async () => {
       if (useMockData) {
+        // Mock data for testing without backend
         const mockArray = [
           { ifname: "Ethernet0", admin_status: "Enabled" },
           { ifname: "Ethernet4", admin_status: "Disabled" },
@@ -31,6 +33,7 @@ export default function AdminStatus() {
       }
       try {
         const response = await api.get("/portOp/status-summary");
+        // Map raw API response into normalized admin status
         const mapped = (response.data.ports || []).map((iface) => ({
           ...iface,
           admin_status: mapAdminStatus(iface.admin_status),
@@ -42,7 +45,7 @@ export default function AdminStatus() {
     };
     fetchInterfaces();
   }, []);
-
+  // Apply both search filter (by interface name) and dropdown filter (Enabled/Disabled/All)
   const filteredInterfaces = interfaces.filter((iface) => {
     const matchesSearch = iface.ifname
       ?.toLowerCase()
@@ -61,7 +64,7 @@ export default function AdminStatus() {
           placeholder="Search by interface name"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="border border-gray-300 px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-300 text-gray-200"
+          className="w-72 border border-gray-300 px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-300 text-gray-200"
         />
         <select
           value={filter}
@@ -101,6 +104,16 @@ export default function AdminStatus() {
                   </td>
                 </tr>
               ))}
+              {filteredInterfaces.length === 0 && (
+                <tr>
+                  <td
+                    colSpan="2"
+                    className="px-4 py-4 text-center text-gray-500"
+                  >
+                    No interfaces found.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

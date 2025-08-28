@@ -8,27 +8,51 @@ export default function CLI() {
     return saved ? JSON.parse(saved) : [];
   });
   const [historyIndex, setHistoryIndex] = useState(-1);
+
+  const [connected, setConnected] = useState(false);
+  const [shouldReconnect, setShouldReconnect] = useState(false);
+
   const socketRef = useRef(null);
   const containerRef = useRef(null);
 
-  useEffect(() => {
-    const socket = new WebSocket("ws://localhost:8000/ws/ssh");
+  const connectWS = () => {
+    const username = localStorage.getItem("username");
+    const socket = new WebSocket(`ws://localhost:8000/switch/cli/${username}`);
     socketRef.current = socket;
 
+    socket.onopen = () => {
+      setConnected(true);
+      setShouldReconnect(false);
+      setOutput((prev) => [...prev, "Connected to server"]);
+    };
+
     socket.onmessage = (event) => {
+      if (event.data === "__RECONNECT__") {
+        setOutput((prev) => [...prev, "SSH session ended. Please reconnect."]);
+        setConnected(false);
+        setShouldReconnect(true);
+        socket.close();
+        return;
+      }
       setOutput((prev) => [...prev, event.data]);
     };
 
-    socket.onerror = (err) => {
-      setOutput((prev) => [...prev, "Error: WebSocket connection failed"]);
+    socket.onerror = () => {
+      setOutput((prev) => [...prev, "WebSocket error"]);
     };
 
     socket.onclose = () => {
-      setOutput((prev) => [...prev, "** Connection closed **"]);
+      if (!shouldReconnect) {
+        setOutput((prev) => [...prev, "** Connection closed **"]);
+      }
+      setConnected(false);
     };
+  };
 
+  useEffect(() => {
+    connectWS();
     return () => {
-      socket.close();
+      socketRef.current?.close();
     };
   }, []);
 
@@ -40,7 +64,7 @@ export default function CLI() {
 
   const handleCommand = (e) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || !connected) return;
 
     setOutput((prev) => [...prev, `$ ${input}`]);
     socketRef.current?.send(input);
@@ -84,14 +108,12 @@ export default function CLI() {
     <div
       className="bg-black text-green-500 font-mono text-sm p-4 rounded-md shadow-md"
       style={{ width: "800px" }}
-      ref={containerRef} // scroll container includes output + input
+      ref={containerRef}
     >
-      <div className="whitespace-pre-wrap">
-        {output.map((line, index) => (
-          <div key={index}>{line}</div>
-        ))}
+      <pre className="font-mono whitespace-pre">{output.join("\n")}</pre>
 
-        {/* Command input inline at bottom */}
+      {connected ? (
+        // Command input
         <form onSubmit={handleCommand} className="flex mt-2">
           <span className="mr-2 text-white">$</span>
           <input
@@ -103,7 +125,16 @@ export default function CLI() {
             autoFocus
           />
         </form>
-      </div>
+      ) : shouldReconnect ? (
+        <button
+          onClick={connectWS}
+          className="mt-3 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded"
+        >
+          Reconnect
+        </button>
+      ) : (
+        <p className="mt-3 text-gray-400">Disconnected</p>
+      )}
     </div>
   );
 }

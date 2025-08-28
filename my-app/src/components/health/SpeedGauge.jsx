@@ -4,11 +4,13 @@ import {
   buildStyles,
 } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
+import { CircleGauge } from "lucide-react";
 
 export default function SpeedGauge() {
-  const [speed, setSpeed] = useState(0);
+  const [speed, setSpeed] = useState(0); // current port speed
 
   useEffect(() => {
+    // Fetch current speed from backend API
     const fetchSpeed = async () => {
       try {
         const res = await fetch("http://localhost:8000/portOp/status-summary");
@@ -27,7 +29,7 @@ export default function SpeedGauge() {
     return () => clearInterval(interval);
   }, []);
 
-  const maxSpeed = 40000;
+  const maxSpeed = 40000; // max Mbps
   const percent = Math.min(speed / maxSpeed, 1);
 
   const getColor = () => {
@@ -37,9 +39,11 @@ export default function SpeedGauge() {
   };
 
   return (
-    <div className="w-64 p-6 bg-white rounded-2xl shadow-lg flex flex-col items-center">
-      <h2 className="text-xl font-semibold text-gray-800 mb-4">Speed</h2>
-      <div className="w-40 h-40">
+    <div className="p-6 bg-white rounded-2xl shadow-lg flex flex-col items-center">
+      <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2 self-start">
+        <CircleGauge className="text-orange-500" /> Speed
+      </h2>
+      <div className="w-40 h-40 flex items-center justify-center">
         <CircularProgressbarWithChildren
           value={percent * 100}
           strokeWidth={12}
