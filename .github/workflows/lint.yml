@@ -1,4 +1,4 @@
-name: Lint Code
+name: Lint and Build Frontend Docker
 
 on: [push, pull_request]
 
@@ -22,3 +22,12 @@ jobs:
       - name: Run ESLint
         run: npm run lint
         working-directory: my-app
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build Docker Image
+        run: docker build -t my-frontend-app ./my-app
